@@ -1,0 +1,8 @@
+.gradle/
+.idea/
+MowMow.iml
+app/app.iml
+app/build/
+build/
+gradle/
+local.properties
