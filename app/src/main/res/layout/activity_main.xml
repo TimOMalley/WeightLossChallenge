@@ -8,7 +8,8 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.twelvelouisiana.android.weightlosschallenge.MainActivity">
+    tools:context="com.twelvelouisiana.android.weightlosschallenge.MainActivity"
+    android:background="#FFFF99">
 
     <Button
         android:text="New"
@@ -17,15 +18,17 @@
         android:layout_alignParentLeft="true"
         android:onClick="onClickNew"
         android:layout_marginBottom="@dimen/activity_vertical_margin"
-        android:id="@+id/newButton" />
+        android:id="@+id/newButton"
+        android:background="@drawable/button_border" />
 
     <ScrollView
         android:id="@+id/scrollView1"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/newButton"
-        android:layout_marginBottom="@dimen/activity_vertical_margin"
-        android:background="@drawable/table_border" >
+        android:background="@drawable/table_border"
+        android:layout_below="@+id/newButton"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true">
 
         <TableLayout
             android:paddingTop="5dp"
