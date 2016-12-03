@@ -113,7 +113,22 @@ public class WeightLossChallengeActivity extends FragmentActivity
 	public boolean onCreateOptionsMenu(Menu menu)
 	{
 		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.activity_main, menu);
+		getMenuInflater().inflate(R.menu.menu_challange, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item)
+	{
+		if (item.getTitle().equals(getString(R.string.menu_back)))
+		{
+			onBackPressed();
+		}
+		else
+		{
+			return false;
+		}
+
 		return true;
 	}
 	

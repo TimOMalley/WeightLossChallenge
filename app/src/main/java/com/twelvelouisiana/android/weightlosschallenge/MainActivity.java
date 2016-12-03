@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.Gravity;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TableLayout;
@@ -23,11 +24,6 @@ public class MainActivity extends Activity implements ActivityCallback {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         refreshFilelist();
-    }
-
-    public void onClickNew(View view) {
-        Intent intent = new Intent(this, WeightLossChallengeActivity.class);
-        startActivityForResult(intent, REQUEST_CODE_NEW);
     }
 
     @Override
@@ -76,6 +72,30 @@ public class MainActivity extends Activity implements ActivityCallback {
         } else {
             return false;
         }
+        return true;
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item)
+    {
+        if (item.getTitle().equals(getString(R.string.menu_new)))
+        {
+            Intent intent = new Intent(this, WeightLossChallengeActivity.class);
+            startActivityForResult(intent, REQUEST_CODE_NEW);
+        }
+        else
+        {
+            return false;
+        }
+
         return true;
     }
 
