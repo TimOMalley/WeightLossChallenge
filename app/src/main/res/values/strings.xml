@@ -5,6 +5,7 @@
     <string name="hello_world">Hello world!</string>
     <string name="menu_new">New</string>
     <string name="menu_back">Back</string>
+    <string name="menu_delete">Delete</string>
     <string name="pickdate">Select Date</string>
     <string name="enter">Enter</string>
     <string name="weight">Weight</string>

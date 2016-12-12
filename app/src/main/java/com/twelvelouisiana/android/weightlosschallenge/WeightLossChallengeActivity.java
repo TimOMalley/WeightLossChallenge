@@ -1,5 +1,6 @@
 package com.twelvelouisiana.android.weightlosschallenge;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -38,7 +39,7 @@ import android.widget.TableRow;
 import android.widget.TableRow.LayoutParams;
 import android.widget.TextView;
 
-public class WeightLossChallengeActivity extends FragmentActivity
+public class WeightLossChallengeActivity extends FragmentActivity implements ActivityCallback
 {
 	public static final String DATA_FILENAME_PREFIX = "wlc_";
     public static final String DATA_FILENAME_EXT = ".dat";
@@ -53,6 +54,8 @@ public class WeightLossChallengeActivity extends FragmentActivity
 	private FileManager _fileManager = null;
 	private ProgressDialog _progressDialog;
 	private Executor _executor = null;
+	private boolean modified = false;
+    private String filename;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -60,7 +63,7 @@ public class WeightLossChallengeActivity extends FragmentActivity
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_challenge);
 
-        String filename = getIntent().getStringExtra("filename");
+        filename = getIntent().getStringExtra("filename");
         if (filename == null)
         {
             filename = generateFilename();
@@ -124,6 +127,10 @@ public class WeightLossChallengeActivity extends FragmentActivity
 		{
 			onBackPressed();
 		}
+        else if (item.getTitle().equals(getString(R.string.menu_delete)))
+        {
+            deleteFile();
+        }
 		else
 		{
 			return false;
@@ -146,6 +153,19 @@ public class WeightLossChallengeActivity extends FragmentActivity
 		setResult(Activity.RESULT_OK, returnIntent);
 		this.finish();
 	}
+
+    @Override
+    public void sendData(File[] results) {
+        //TODO
+    }
+
+    @Override
+    public void sendData(String[] results) {
+        if (results == null)
+        {
+            onBackPressed();
+        }
+    }
 
     private String generateFilename()
     {
@@ -178,7 +198,12 @@ public class WeightLossChallengeActivity extends FragmentActivity
 			e.printStackTrace();
 		}
 	}
-	
+
+    private void deleteFile()
+    {
+        FileOperationsAsyncTask task = new FileOperationsAsyncTask(this, Constants.FILE_DELETE);
+        task.execute(filename);
+    }
 	
 	private void addListenerOnDateText()
 	{
