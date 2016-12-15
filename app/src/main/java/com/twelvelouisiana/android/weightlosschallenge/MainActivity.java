@@ -82,7 +82,7 @@ public class MainActivity extends Activity implements ActivityCallback {
     }
 
     @Override
-    public void sendData(String[] results) {
+    public void sendData(int operatio, String[] results) {
         if (results != null)
         {
             //TODO

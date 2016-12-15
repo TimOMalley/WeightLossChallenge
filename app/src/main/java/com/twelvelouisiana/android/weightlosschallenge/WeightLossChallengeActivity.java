@@ -1,13 +1,5 @@
 package com.twelvelouisiana.android.weightlosschallenge;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
@@ -22,6 +14,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
@@ -39,9 +32,18 @@ import android.widget.TableRow;
 import android.widget.TableRow.LayoutParams;
 import android.widget.TextView;
 
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
 public class WeightLossChallengeActivity extends FragmentActivity implements ActivityCallback
 {
-	public static final String DATA_FILENAME_PREFIX = "wlc_";
+    private static final String TAG = WeightLossChallengeActivity.class.getName();
+    public static final String DATA_FILENAME_PREFIX = "wlc_";
     public static final String DATA_FILENAME_EXT = ".dat";
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("mm/dd/yyyy");
 
@@ -76,7 +78,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 		addListenerOnDateText();
 		addListenerOnButtonEnter();
 	}
-	
+
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo)
 	{
@@ -90,11 +92,23 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 	@Override
 	public boolean onContextItemSelected(MenuItem item)
 	{
-		if (item.getTitle().equals(getString(R.string.remove_row))) {
-			removeRow(item.getItemId());
-		} else if (item.getTitle().equals(getString(R.string.remove_all_data))) {
+		if (item.getTitle().equals(getString(R.string.remove_row)))
+        {
+			if (removeRow(item.getItemId()))
+            {
+                // Update the file
+                if (!modified)
+                {
+                    modified = true;
+                }
+            }
+		}
+        else if (item.getTitle().equals(getString(R.string.remove_all_data)))
+        {
 			resetData();
-		} else {
+		}
+        else
+        {
 			return false;
 		}
 		return true;
@@ -148,23 +162,44 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 	@Override
 	public void onBackPressed()
 	{
-		Intent returnIntent = new Intent();
-		returnIntent.putExtra("filename", _fileManager.getFilename());
-		setResult(Activity.RESULT_OK, returnIntent);
-		this.finish();
+        if (modified)
+        {
+            writeFile();
+			goBack();
+        }
+        else {
+            goBack();
+        }
 	}
 
     @Override
-    public void sendData(File[] results) {
+    public void sendData(File[] results)
+    {
         //TODO
     }
 
     @Override
-    public void sendData(String[] results) {
-        if (results == null)
+    public void sendData(int operation, String[] results)
+    {
+        switch (operation)
         {
-            onBackPressed();
+            case Constants.FILE_READ:
+                loadData(results);
+                break;
+            case Constants.FILE_DELETE:
+                goBack();
+                break;
+            default:
+                break;
         }
+    }
+
+    private void goBack()
+    {
+        Intent returnIntent = new Intent();
+        returnIntent.putExtra("filename", _fileManager.getFilename());
+        setResult(Activity.RESULT_OK, returnIntent);
+        this.finish();
     }
 
     private String generateFilename()
@@ -176,10 +211,20 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 
 	private void loadFile()
 	{
-		try
+		FileOperationsAsyncTask task = new FileOperationsAsyncTask(this, Constants.FILE_READ, filename);
+		task.execute();
+	}
+
+	private void loadData(String[] lines)
+	{
+        if (lines == null || lines.length == 0)
+        {
+            Log.d(TAG, "No data to load");
+            return;
+        }
+        try
 		{
-			List<String> lines = _fileManager.readFile();
-			for (String line : lines)
+            for (String line : lines)
 			{
 				String[] row = line.split(";");
 				if (row.length == 4)
@@ -195,14 +240,60 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 		}
 		catch (Exception e)
 		{
-			e.printStackTrace();
-		}
+            Log.e(TAG, "Error loading table data", e);
+        }
 	}
+
+    private void writeFile()
+    {
+        FileOperationsAsyncTask task = new FileOperationsAsyncTask(this, Constants.FILE_WRITE, filename);
+        task.execute(getTableData());
+    }
+
+    private String[] getTableData()
+    {
+        ArrayList<String> rows = new ArrayList<String>();
+        TableLayout tableLayout = (TableLayout) findViewById(R.id.tableLayout1);
+        if (tableLayout != null) {
+            for (int i = 1; i < tableLayout.getChildCount(); i++) // skip header row
+            {
+                TableRow tableRow = (TableRow) tableLayout.getChildAt(i);
+                StringBuilder row = new StringBuilder();
+                row.append(getCellText(tableRow, 0));
+                row.append(";");
+                row.append(getCellText(tableRow, 1));
+                row.append(";");
+                row.append(getCellText(tableRow, 2));
+                row.append(";");
+                row.append(getCellText(tableRow, 3));
+                rows.add(row.toString());
+            }
+        }
+
+        return rows.toArray(new String[rows.size()]);
+    }
+
+    private String getCellText(TableRow tableRow, int position)
+    {
+        String text = "";
+        if (tableRow == null)
+        {
+            return text;
+        }
+        View view = tableRow.getChildAt(position);
+        if (view != null && view instanceof TextView)
+        {
+            TextView textView = (TextView) view;
+            text = textView.getText().toString();
+        }
+
+        return text;
+    }
 
     private void deleteFile()
     {
-        FileOperationsAsyncTask task = new FileOperationsAsyncTask(this, Constants.FILE_DELETE);
-        task.execute(filename);
+        FileOperationsAsyncTask task = new FileOperationsAsyncTask(this, Constants.FILE_DELETE, filename);
+        task.execute();
     }
 	
 	private void addListenerOnDateText()
@@ -231,7 +322,9 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 			double loss = start - current;
 			lossString = String.format("%3.1f", loss);
 		}
-		catch(Exception e){}
+		catch(Exception e){
+            Log.d(TAG, "Error calculating loss", e);
+        }
 		return lossString;
 	}
 	
@@ -249,7 +342,9 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 			double pct = amount/start;
 			pctString = String.format("%3.2f", pct*100);;
 		}
-		catch(Exception e){}
+		catch(Exception e){
+            Log.d(TAG, "Error calculating percentage", e);
+        }
 		return pctString;
 	}
 	
@@ -263,8 +358,9 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 		return validated;
 	}
 	
-	private void addTableRow(String date, String weight, String loss, String pct, boolean alert)
+	private boolean addTableRow(String date, String weight, String loss, String pct, boolean alert)
 	{
+        boolean added = false;
 		if (validate(date) && validate(weight))
 		{
 			TableLayout tl = (TableLayout) findViewById(R.id.tableLayout1);
@@ -307,18 +403,21 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 			tr.addView(pctText);
 			tr.setId(++rowId);
 			tl.addView(tr);
+            added = true;
 			registerForContextMenu(tr);
 		}
 		else
 		{
-			if (alert)
-				showMessageAlert("Invalid Entry", "Entry not added to table.");
-			return;
+			if (alert) {
+                showMessageAlert("Invalid Entry", "Entry not added to table.");
+            }
 		}
+        return added;
 	}
 	
-	private void removeRow(int id)
+	private boolean removeRow(int id)
 	{
+        boolean removed = true;
 		TableLayout tl = (TableLayout) findViewById(R.id.tableLayout1);
 		TableRow tr = null;
 		
@@ -333,13 +432,12 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 		{
 			// Remove from table
 			tl.removeView(tr);
-			
-			// Remove from file
-			_fileManager.removeFileRow(tr);
+            removed = true;
 			
 			// alternateBackgroundColor
 			resetAlternateBackgroundColor(tl);
 		}
+        return removed;
 	}
 	
 	private void resetAlternateBackgroundColor(TableLayout tableLayout)
@@ -376,7 +474,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 			tl.removeViews(1, rows-1);
 
 			// Delete File
-			_fileManager.deleteDataFile();
+			deleteFile();
 		}
 		catch (Exception e)
 		{
@@ -417,7 +515,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 		try
 		{
 			Date newDate = DATE_FORMAT.parse(date);
-			if (newDate.before(_startDate))
+			if (_startDate == null || newDate.before(_startDate))
 			{
 				_startDate = newDate;
 				_startingWeight = weight;
@@ -425,7 +523,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 		}
 		catch (Exception e)
 		{
-			return;
+            Log.d(TAG, "Error setting start weight", e);
 		}
 	}
 
@@ -483,11 +581,17 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 				_startingWeight = weight;
 			String loss = calculateLoss(weight);
 			String pct = calculatePercentage(loss);
-			addTableRow(date, weight, loss, pct, true);
+			if (addTableRow(date, weight, loss, pct, true))
+            {
+                // Update the file
+                if (!modified) {
+                    modified = true;
+                }
+            }
 			
-			_progressDialog.show();
-			
-			_executor.execute(new AddEntryToFile(date, weight, loss, pct));
+//			_progressDialog.show();
+//
+//			_executor.execute(new AddEntryToFile(date, weight, loss, pct));
 
 			// Clear text areas
 			_editText1.setText("");

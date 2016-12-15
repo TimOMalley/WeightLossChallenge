@@ -9,5 +9,5 @@ import java.io.File;
 public interface ActivityCallback
 {
     void sendData(File[] results);
-    void sendData(String[] results);
+    void sendData(int operation, String[] results);
 }
