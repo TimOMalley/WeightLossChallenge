@@ -1,11 +1,11 @@
 package com.twelvelouisiana.android.weightlosschallenge;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -38,18 +38,15 @@ import java.util.Date;
 public class WeightLossChallengeActivity extends FragmentActivity implements ActivityCallback
 {
     private static final String TAG = WeightLossChallengeActivity.class.getName();
-    public static final String DATA_FILENAME_PREFIX = "wlc_";
-    public static final String DATA_FILENAME_EXT = ".dat";
-	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MM/dd/yyyy");
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MM/dd/yyyy");
 
 	private String _startingWeight = null;
-	private Date _startDate = null;
 	private EditText _editText1 = null;
 	private EditText _editText2 = null;
 	private boolean alternateBackgroundColor = false;
 	private int rowId = 0;
 	private boolean modified = false;
-    private String filename;
+    EditText editTextFilename;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -57,14 +54,29 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_challenge);
 
-        filename = getIntent().getStringExtra("filename");
+        ActionBar actionBar = getActionBar();
+        String filename = getIntent().getStringExtra("filename");
         if (filename == null)
         {
-            filename = generateFilename();
+            if (actionBar != null) {
+                actionBar.setCustomView(R.layout.custom_actionbar_view);
+                editTextFilename = (EditText) actionBar.getCustomView().findViewById(R.id.editTextFilename);
+                actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
+                actionBar.setDisplayHomeAsUpEnabled(false);
+            }
         }
-		loadFile();
+        else
+        {
+            setTitle(filename);
+            if (actionBar != null) {
+                getActionBar().setDisplayShowHomeEnabled(false);
+                getActionBar().setDisplayHomeAsUpEnabled(false);
+            }
+        }
+		readChallengeFile(normalizeFilename(filename));
 		addListenerOnDateText();
 		addListenerOnButtonEnter();
+
 	}
 
 	@Override
@@ -102,43 +114,37 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 		return true;
 	}
 	
-	public Dialog getFailedAlertDialog()
-	{
-		return new AlertDialog.Builder(WeightLossChallengeActivity.this)
-        .setTitle(R.string.alert_dialog_failed)
-        .setNeutralButton(R.string.alert_dialog_ok, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int whichButton) {
-            	return;
-            }
-        })
-        .create();
-	}
-	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu)
 	{
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.menu_challange, menu);
+        if (editTextFilename != null)
+        {
+            MenuItem item = menu.findItem(R.id.menu_delete);
+            item.setEnabled(false);
+        }
 		return true;
 	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item)
 	{
-		if (item.getTitle().equals(getString(R.string.menu_back)))
-		{
-			onBackPressed();
-		}
-        else if (item.getTitle().equals(getString(R.string.menu_delete)))
-        {
-            deleteFile();
+        switch (item.getItemId()) {
+            case R.id.menu_back:
+                onBackPressed();
+                return true;
+            case R.id.menu_cancel:
+                goBack();
+                return true;
+            case R.id.menu_delete:
+                if (editTextFilename == null) {
+                    deleteChallengeFile(normalizeFilename(getTitle().toString()));
+                }
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-		else
-		{
-			return false;
-		}
-
-		return true;
 	}
 	
 	@Override
@@ -152,8 +158,23 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 	{
         if (modified)
         {
-            writeFile();
-			goBack();
+            String filename;
+            if (editTextFilename == null)
+            {
+				filename = getTitle().toString();
+            }
+            else
+            {
+				filename = editTextFilename.getText().toString();
+            }
+            if (filename == null || filename.length() == 0)
+            {
+                showMessageAlert(null, getString(R.string.name_required));
+            }
+            else {
+                writeChallengeFile(normalizeFilename(filename));
+                goBack();
+            }
         }
         else {
             goBack();
@@ -163,7 +184,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
     @Override
     public void sendData(File[] results)
     {
-        //TODO
+        // Do nothing.
     }
 
     @Override
@@ -185,37 +206,38 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
     private void goBack()
     {
         Intent returnIntent = new Intent();
-        returnIntent.putExtra("filename", filename);
         setResult(Activity.RESULT_OK, returnIntent);
         this.finish();
     }
 
-    private String generateFilename()
+    private String normalizeFilename(String name)
     {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
-        String currentTime = sdf.format(Calendar.getInstance().getTime());
-        return DATA_FILENAME_PREFIX + currentTime + DATA_FILENAME_EXT;
+        if (name == null || name.endsWith(Constants.DATA_FILENAME_EXT))
+        {
+            return name;
+        }
+        return name + Constants.DATA_FILENAME_EXT;
     }
 
-	private void loadFile()
+	private void readChallengeFile(String filename)
 	{
 		FileOperationsAsyncTask task = new FileOperationsAsyncTask(this, Constants.FILE_READ, filename);
 		task.execute();
 	}
 
-	private void writeFile()
+	private void writeChallengeFile(String filename)
     {
         FileOperationsAsyncTask task = new FileOperationsAsyncTask(this, Constants.FILE_WRITE, filename);
         task.execute(getTableData());
     }
 
-    private void deleteFile()
+    private void deleteChallengeFile(String filename)
     {
         FileOperationsAsyncTask task = new FileOperationsAsyncTask(this, Constants.FILE_DELETE, filename);
         task.execute();
     }
-	
-	private void addListenerOnDateText()
+
+    private void addListenerOnDateText()
 	{
 		_editText1 = (EditText) findViewById(R.id.editText1);
 		_editText1.setOnClickListener(new DateTextOnClickListener());
@@ -397,7 +419,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 		else
 		{
 			if (alert) {
-                showMessageAlert("Invalid Entry", "Entry not added to table.");
+                showMessageAlert(getString(R.string.title_invalid), getString(R.string.invalid_message));
             }
 		}
         return added;
@@ -452,7 +474,6 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 		try
 		{
 			// Clear initial setting
-			_startDate = null;
 			_startingWeight = null;
 			alternateBackgroundColor = false;
 
@@ -466,7 +487,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 			showExceptionAlert(e);
 		}
 	}
-	
+
 	private void showExceptionAlert(Exception e)
 	{
 		String message = e.getMessage();
@@ -478,7 +499,9 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 	private void showMessageAlert(String title, String message)
 	{
 		AlertDialog.Builder dialog = new AlertDialog.Builder(this);
-        dialog.setTitle(title);
+        if (title != null) {
+            dialog.setTitle(title);
+        }
         dialog.setMessage(message);
         dialog.setNeutralButton("Ok", null);
         dialog.create().show();
@@ -516,8 +539,8 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
             editText1.setText(dateText);
 		}
 	}
-	
-	class DateTextOnClickListener implements OnClickListener
+
+    class DateTextOnClickListener implements OnClickListener
 	{
 		@Override
         public void onClick(View v)

@@ -2,9 +2,9 @@
 <resources>
 
     <string name="app_name">Weight Loss Challenge</string>
-    <string name="hello_world">Hello world!</string>
     <string name="menu_new">New</string>
     <string name="menu_back">Back</string>
+    <string name="menu_cancel">Cancel</string>
     <string name="menu_delete">Delete</string>
     <string name="pickdate">Select Date</string>
     <string name="enter">Enter</string>
@@ -18,9 +18,10 @@
     <string name="menu_header_title">Table Actions</string>
     <string name="cancel">Cancel</string>
     <string name="alert_dialog_ok">OK</string>
-    <string name="alert_dialog_failed">Save Failed</string>
-    <string name="progress_message">Working...</string>
-    <string name="challenges">Challenges</string>
-    <string name="delete_file">Delete file</string>
-    <string name="update_file">Update file</string>
+    <string name="file_deleted">Deleted</string>
+    <string name="file_saved">Saved</string>
+    <string name="NameHint">Name</string>
+    <string name="name_required">Name required!</string>
+    <string name="title_invalid">Invalid Entry</string>
+    <string name="invalid_message">Entry not added to table.</string>
 </resources>

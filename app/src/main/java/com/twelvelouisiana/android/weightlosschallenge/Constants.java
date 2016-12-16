@@ -9,4 +9,7 @@ public class Constants
     public static final int FILE_READ = 1;
     public static final int FILE_WRITE = 2;
     public static final int FILE_DELETE = 3;
+
+    public static final String DATA_FILENAME_EXT = ".dat";
+
 }

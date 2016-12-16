@@ -52,19 +52,7 @@ public class MainActivity extends Activity implements ActivityCallback {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
         if (requestCode == REQUEST_CODE_NEW) {
-            if(resultCode == Activity.RESULT_OK)
-            {
-//                String result = data.getStringExtra("filename");
-//                if (result != null)
-//                {
-//                    arrayAdapter.add(result);
-//                }
-                refreshFilelist();
-            }
-            else if (resultCode == Activity.RESULT_CANCELED)
-            {
-                //Do something?
-            }
+            refreshFilelist();
         }
     }
 
@@ -75,7 +63,7 @@ public class MainActivity extends Activity implements ActivityCallback {
             for (File file : results) {
                 Date date = new Date(file.lastModified());
                 String lastModified = sdf.format(date);
-                challengeList.add(new ChallengeItem(file.getName(), lastModified));
+                challengeList.add(new ChallengeItem(file.getName().replaceFirst(Constants.DATA_FILENAME_EXT, ""), lastModified));
             }
             listAdapter.notifyDataSetChanged();
         }
@@ -83,10 +71,7 @@ public class MainActivity extends Activity implements ActivityCallback {
 
     @Override
     public void sendData(int operatio, String[] results) {
-        if (results != null)
-        {
-            //TODO
-        }
+        // Do nothing
     }
 
     @Override

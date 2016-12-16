@@ -76,10 +76,10 @@ public class FileOperationsAsyncTask extends AsyncTask<String, Void, String[]>
                 activityCallback.sendData(operation, results);
                 break;
             case Constants.FILE_WRITE:
-                Toast.makeText(weakReference.get(), "Saved", Toast.LENGTH_SHORT).show();
+                Toast.makeText(weakReference.get(), weakReference.get().getString(R.string.file_saved), Toast.LENGTH_SHORT).show();
                 break;
             case Constants.FILE_DELETE:
-                Toast.makeText(weakReference.get(), "Deleted", Toast.LENGTH_SHORT).show();
+                Toast.makeText(weakReference.get(), weakReference.get().getString(R.string.file_deleted), Toast.LENGTH_SHORT).show();
                 activityCallback.sendData(operation, results);
                 break;
             default:

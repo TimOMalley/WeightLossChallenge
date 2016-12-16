@@ -41,8 +41,7 @@ public class FileListAsyncTask extends AsyncTask<Void, Void, File[]> implements 
     @Override
     public boolean accept(File file, String name) {
         String lowercaseName = name.toLowerCase();
-        if (lowercaseName.endsWith(WeightLossChallengeActivity.DATA_FILENAME_EXT)
-                && lowercaseName.startsWith(WeightLossChallengeActivity.DATA_FILENAME_PREFIX))
+        if (lowercaseName.endsWith(Constants.DATA_FILENAME_EXT))
         {
             return true;
         }
