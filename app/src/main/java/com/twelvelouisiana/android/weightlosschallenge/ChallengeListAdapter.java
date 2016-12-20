@@ -10,7 +10,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 /**
- * Created on 12/6/2016.
+ * Extension of ArrayAdapter that uses the ViewHolder pattern.
  */
 
 public class ChallengeListAdapter extends ArrayAdapter<ChallengeItem>

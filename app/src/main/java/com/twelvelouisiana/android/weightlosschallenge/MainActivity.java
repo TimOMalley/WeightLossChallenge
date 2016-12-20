@@ -7,27 +7,24 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.Locale;
 
-public class MainActivity extends Activity implements ActivityCallback {
-    private static final int REQUEST_CODE_NEW = 1;
-
-    private SimpleDateFormat sdf = new SimpleDateFormat("MMM d");
+public class MainActivity extends Activity implements ActivityCallback
+{
+    private SimpleDateFormat sdf = new SimpleDateFormat("MMM d", Locale.US);
     private ChallengeListAdapter listAdapter;
     private ArrayList<ChallengeItem> challengeList = new ArrayList<ChallengeItem>();
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -36,22 +33,39 @@ public class MainActivity extends Activity implements ActivityCallback {
         ListView listView = (ListView) findViewById(R.id.challengeList);
         listView.setAdapter(listAdapter);
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            public void onItemClick(AdapterView<?> parent, View view,
-                                    int position, long id) {
-                String name = ((TextView) view.findViewById(R.id.name)).getText().toString();
-                Intent intent = new Intent(getApplicationContext(), WeightLossChallengeActivity.class);
-                intent.putExtra("filename", name);
-                startActivityForResult(intent, REQUEST_CODE_NEW);
-            }
-        });
+        listView.setOnItemClickListener(new ListViewOnItemClickListener());
+
         refreshFilelist();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item)
+    {
+        if (item.getTitle().equals(getString(R.string.menu_new)))
+        {
+            Intent intent = new Intent(this, WeightLossChallengeActivity.class);
+            startActivityForResult(intent, Constants.REQUEST_CODE_NEW);
+        }
+        else
+        {
+            return false;
+        }
+
+        return true;
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
-        if (requestCode == REQUEST_CODE_NEW) {
+        if (requestCode == Constants.REQUEST_CODE_NEW) {
             refreshFilelist();
         }
     }
@@ -75,32 +89,25 @@ public class MainActivity extends Activity implements ActivityCallback {
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu)
-    {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item)
-    {
-        if (item.getTitle().equals(getString(R.string.menu_new)))
-        {
-            Intent intent = new Intent(this, WeightLossChallengeActivity.class);
-            startActivityForResult(intent, REQUEST_CODE_NEW);
-        }
-        else
-        {
-            return false;
-        }
-
-        return true;
+    public void sendText(String text) {
+        // Do nothing
     }
 
     private void refreshFilelist()
     {
         FileListAsyncTask task = new FileListAsyncTask(this);
         task.execute();
+    }
+
+    class ListViewOnItemClickListener implements AdapterView.OnItemClickListener
+    {
+        @Override
+        public void onItemClick(AdapterView<?> adapterView, View view, int i, long l)
+        {
+            String name = ((TextView) view.findViewById(R.id.name)).getText().toString();
+            Intent intent = new Intent(getApplicationContext(), WeightLossChallengeActivity.class);
+            intent.putExtra(Constants.FILENAME_KEY, name);
+            startActivityForResult(intent, Constants.REQUEST_CODE_NEW);
+        }
     }
 }

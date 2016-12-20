@@ -30,23 +30,22 @@ import android.widget.TableRow.LayoutParams;
 import android.widget.TextView;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 
 public class WeightLossChallengeActivity extends FragmentActivity implements ActivityCallback
 {
     private static final String TAG = WeightLossChallengeActivity.class.getName();
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MM/dd/yyyy");
 
-	private String _startingWeight = null;
-	private EditText _editText1 = null;
-	private EditText _editText2 = null;
-	private boolean alternateBackgroundColor = false;
-	private int rowId = 0;
-	private boolean modified = false;
-    EditText editTextFilename;
+	private String _startingWeight;
+    private RelativeLayout _mainLayout;
+	private EditText _editTextDate;
+	private EditText _editTextWeight;
+    private EditText _editTextFilename;
+    private TableLayout _tableLayoutResults;
+	private boolean _alternateBackgroundColor = false;
+	private int _rowId = 0;
+	private boolean _modified = false;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -55,31 +54,66 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 		setContentView(R.layout.activity_challenge);
 
         ActionBar actionBar = getActionBar();
-        String filename = getIntent().getStringExtra("filename");
+        String filename = getIntent().getStringExtra(Constants.FILENAME_KEY);
         if (filename == null)
         {
             if (actionBar != null) {
                 actionBar.setCustomView(R.layout.custom_actionbar_view);
-                editTextFilename = (EditText) actionBar.getCustomView().findViewById(R.id.editTextFilename);
-                actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
-                actionBar.setDisplayHomeAsUpEnabled(false);
+                _editTextFilename = (EditText) actionBar.getCustomView().findViewById(R.id.editTextFilename);
+                actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM | ActionBar.DISPLAY_HOME_AS_UP);
             }
         }
         else
         {
             setTitle(filename);
-            if (actionBar != null) {
-                getActionBar().setDisplayShowHomeEnabled(false);
-                getActionBar().setDisplayHomeAsUpEnabled(false);
-            }
         }
-		readChallengeFile(normalizeFilename(filename));
-		addListenerOnDateText();
+        if (savedInstanceState == null)
+        {
+            readChallengeFile(normalizeFilename(filename));
+        }
+
+        _mainLayout = (RelativeLayout)findViewById(R.id.mainLayout);
+        _editTextDate = (EditText) findViewById(R.id.editTextDate);
+        _editTextWeight = (EditText) findViewById(R.id.editTextWeight);
+        _tableLayoutResults = (TableLayout) findViewById(R.id.tableLayoutResults);
+
+        addListenerOnDateText();
 		addListenerOnButtonEnter();
 
 	}
 
-	@Override
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (_editTextFilename == null)
+        {
+            outState.putString("filename", getTitle().toString());
+        }
+        else
+        {
+            outState.putString("filename", _editTextFilename.getText().toString());
+        }
+        outState.putStringArray("data", getTableData(_tableLayoutResults));
+        outState.putBoolean("modified", _modified);
+        outState.putInt("rowId", _rowId);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        if (savedInstanceState != null)
+        {
+            String[] data = savedInstanceState.getStringArray("data");
+            if (data != null)
+            {
+                loadTableData(data);
+            }
+            _modified = savedInstanceState.getBoolean("modified");
+            _rowId = savedInstanceState.getInt("rowId");
+        }
+    }
+
+    @Override
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo)
 	{
 		super.onCreateContextMenu(menu, v, menuInfo);
@@ -94,12 +128,12 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 	{
 		if (item.getTitle().equals(getString(R.string.remove_row)))
         {
-			if (removeRow(item.getItemId()))
+			if (removeRow(_tableLayoutResults, item.getItemId()))
             {
                 // Update the file
-                if (!modified)
+                if (!_modified)
                 {
-                    modified = true;
+                    _modified = true;
                 }
             }
 		}
@@ -117,9 +151,8 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu)
 	{
-		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.menu_challange, menu);
-        if (editTextFilename != null)
+        if (_editTextFilename != null)
         {
             MenuItem item = menu.findItem(R.id.menu_delete);
             item.setEnabled(false);
@@ -131,6 +164,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 	public boolean onOptionsItemSelected(MenuItem item)
 	{
         switch (item.getItemId()) {
+            case android.R.id.home:
             case R.id.menu_back:
                 onBackPressed();
                 return true;
@@ -138,7 +172,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
                 goBack();
                 return true;
             case R.id.menu_delete:
-                if (editTextFilename == null) {
+                if (_editTextFilename == null) {
                     deleteChallengeFile(normalizeFilename(getTitle().toString()));
                 }
                 return true;
@@ -148,24 +182,18 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 	}
 	
 	@Override
-	protected void onStop() {
-		super.onStop();
-		this.finish();
-	}
-
-	@Override
 	public void onBackPressed()
 	{
-        if (modified)
+        if (_modified)
         {
             String filename;
-            if (editTextFilename == null)
+            if (_editTextFilename == null)
             {
 				filename = getTitle().toString();
             }
             else
             {
-				filename = editTextFilename.getText().toString();
+				filename = _editTextFilename.getText().toString();
             }
             if (filename == null || filename.length() == 0)
             {
@@ -193,13 +221,22 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
         switch (operation)
         {
             case Constants.FILE_READ:
-                loadData(results);
+                loadTableData(results);
                 break;
             case Constants.FILE_DELETE:
                 goBack();
                 break;
             default:
                 break;
+        }
+    }
+
+    @Override
+    public void sendText(String text)
+    {
+        if (_editTextDate != null)
+        {
+            _editTextDate.setText(text);
         }
     }
 
@@ -228,7 +265,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 	private void writeChallengeFile(String filename)
     {
         FileOperationsAsyncTask task = new FileOperationsAsyncTask(this, Constants.FILE_WRITE, filename);
-        task.execute(getTableData());
+        task.execute(getTableData(_tableLayoutResults));
     }
 
     private void deleteChallengeFile(String filename)
@@ -239,8 +276,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 
     private void addListenerOnDateText()
 	{
-		_editText1 = (EditText) findViewById(R.id.editText1);
-		_editText1.setOnClickListener(new DateTextOnClickListener());
+		_editTextDate.setOnClickListener(new DateTextOnClickListener());
 	}
 
 	private void addListenerOnButtonEnter()
@@ -299,10 +335,9 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 		return validated;
 	}
 
-    private String[] getTableData()
+    private String[] getTableData(TableLayout tableLayout)
     {
         ArrayList<String> rows = new ArrayList<String>();
-        TableLayout tableLayout = (TableLayout) findViewById(R.id.tableLayout1);
         if (tableLayout != null) {
             for (int i = 1; i < tableLayout.getChildCount(); i++) // skip header row
             {
@@ -339,7 +374,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
         return text;
     }
 
-    private void loadData(String[] lines)
+    private void loadTableData(String[] lines)
     {
         if (lines == null || lines.length == 0)
         {
@@ -348,6 +383,9 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
         }
         try
         {
+            // Clear data rows
+            clearTableData(_tableLayoutResults);
+
             for (String line : lines)
             {
                 String[] row = line.split(";");
@@ -358,7 +396,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
                     String loss = row[2];
                     String pct = row[3];
                     setStartingWeight(weight);
-                    addTableRow(date, weight, loss, pct, false);
+                    addTableRow(_tableLayoutResults, date, weight, loss, pct, false);
                 }
             }
         }
@@ -368,53 +406,52 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
         }
     }
 
-    private boolean addTableRow(String date, String weight, String loss, String pct, boolean alert)
+    private boolean addTableRow(TableLayout tableLayout, String date, String weight, String loss, String pct, boolean alert)
 	{
         boolean added = false;
 		if (validate(date) && validate(weight))
 		{
-			TableLayout tl = (TableLayout) findViewById(R.id.tableLayout1);
-			TableRow tr = new TableRow(WeightLossChallengeActivity.this);
-			if (alternateBackgroundColor)
+			TableRow tableRow = new TableRow(WeightLossChallengeActivity.this);
+			if (_alternateBackgroundColor)
 			{
-				tr.setBackgroundColor(Color.LTGRAY);
-				alternateBackgroundColor = false;
+				tableRow.setBackgroundColor(Color.LTGRAY);
+				_alternateBackgroundColor = false;
 			}
 			else
 			{
-				alternateBackgroundColor = true;
+				_alternateBackgroundColor = true;
 			}
 			TextView dateText = new TextView(WeightLossChallengeActivity.this);
 			dateText.setGravity(Gravity.CENTER_HORIZONTAL);
 			dateText.setText(date);
 			dateText.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT,
 					LayoutParams.WRAP_CONTENT, 1f));
-			tr.addView(dateText);
+			tableRow.addView(dateText);
 			
 			TextView weightText = new TextView(WeightLossChallengeActivity.this);
 			weightText.setGravity(Gravity.CENTER_HORIZONTAL);
 			weightText.setText(weight);
 			weightText.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT,
 					LayoutParams.WRAP_CONTENT, 1f));
-			tr.addView(weightText);
+			tableRow.addView(weightText);
 			
 			TextView lossText = new TextView(WeightLossChallengeActivity.this);
 			lossText.setGravity(Gravity.CENTER_HORIZONTAL);
 			lossText.setText(loss);
 			lossText.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT,
 					LayoutParams.WRAP_CONTENT, 1f));
-			tr.addView(lossText);
+			tableRow.addView(lossText);
 			
 			TextView pctText = new TextView(WeightLossChallengeActivity.this);
 			pctText.setGravity(Gravity.CENTER_HORIZONTAL);
 			pctText.setText(pct);
 			pctText.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT,
 					LayoutParams.WRAP_CONTENT, 1f));
-			tr.addView(pctText);
-			tr.setId(++rowId);
-			tl.addView(tr);
+			tableRow.addView(pctText);
+			tableRow.setId(++_rowId);
+			tableLayout.addView(tableRow);
             added = true;
-			registerForContextMenu(tr);
+			registerForContextMenu(tableRow);
 		}
 		else
 		{
@@ -425,46 +462,55 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
         return added;
 	}
 	
-	private boolean removeRow(int id)
+	private boolean removeRow(TableLayout tableLayout, int id)
 	{
         boolean removed = true;
-		TableLayout tl = (TableLayout) findViewById(R.id.tableLayout1);
-		TableRow tr = null;
-		
-		// Loop through the table to find he row
-		for (int i = 1; i < tl.getChildCount(); i++)
-		{
-			View view = tl.getChildAt(i);
-			if (view.getId() == id)
-				tr = (TableRow) view;
-		}
-		if (tr != null)
-		{
-			// Remove from table
-			tl.removeView(tr);
-            removed = true;
-			
-			// alternateBackgroundColor
-			resetAlternateBackgroundColor(tl);
-		}
+		TableRow tableRow = null;
+
+        if (tableLayout != null)
+        {
+            // Loop through the table to find he row
+            for (int i = 1; i < tableLayout.getChildCount(); i++) {
+                View view = tableLayout.getChildAt(i);
+                if (view.getId() == id)
+                    tableRow = (TableRow) view;
+            }
+            if (tableRow != null) {
+                // Remove from table
+                tableLayout.removeView(tableRow);
+                removed = true;
+
+                // _alternateBackgroundColor
+                resetAlternateBackgroundColor(tableLayout);
+            }
+        }
         return removed;
 	}
+
+    private void clearTableData(TableLayout tableLayout)
+    {
+        if (tableLayout != null)
+        {
+            int rows = tableLayout.getChildCount();
+            tableLayout.removeViews(1, rows - 1);
+        }
+    }
 	
 	private void resetAlternateBackgroundColor(TableLayout tableLayout)
 	{
-		alternateBackgroundColor = false;
+		_alternateBackgroundColor = false;
 		for (int i = 1; i < tableLayout.getChildCount(); i++)
 		{
 			View view = tableLayout.getChildAt(i);
-			if (alternateBackgroundColor)
+			if (_alternateBackgroundColor)
 			{
 				view.setBackgroundColor(Color.LTGRAY);
-				alternateBackgroundColor = false;
+				_alternateBackgroundColor = false;
 			}
 			else
 			{
 				view.setBackgroundColor(Color.WHITE);
-				alternateBackgroundColor = true;
+				_alternateBackgroundColor = true;
 			}
 		}
 	}
@@ -475,12 +521,10 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 		{
 			// Clear initial setting
 			_startingWeight = null;
-			alternateBackgroundColor = false;
+			_alternateBackgroundColor = false;
 
 			// Clear Table
-			TableLayout tl = (TableLayout) findViewById(R.id.tableLayout1);
-			int rows = tl.getChildCount();
-			tl.removeViews(1, rows-1);
+			clearTableData(_tableLayoutResults);
 		}
 		catch (Exception e)
 		{
@@ -493,7 +537,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 		String message = e.getMessage();
 		if (message == null || message.length() == 0)
 			message = e.toString();
-		showMessageAlert("Error", message);
+		showMessageAlert(getString(R.string.error_text), message);
 	}
 	
 	private void showMessageAlert(String title, String message)
@@ -503,7 +547,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
             dialog.setTitle(title);
         }
         dialog.setMessage(message);
-        dialog.setNeutralButton("Ok", null);
+        dialog.setNeutralButton(R.string.ok_text, null);
         dialog.create().show();
 	}
 	
@@ -524,6 +568,8 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 
 	public static class DatePickerDialogFragment extends DialogFragment implements	DatePickerDialog.OnDateSetListener
 	{
+        private ActivityCallback activityCallback;
+
 		@Override
 		public Dialog onCreateDialog(Bundle savedInstanceState) {
 			final Calendar calendar = Calendar.getInstance();
@@ -533,10 +579,26 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 			return new DatePickerDialog(getActivity(), this, yy, mm, dd);
 		}
 
-		public void onDateSet(DatePicker view, int yy, int mm, int dd) {
-			EditText editText1 = (EditText) getActivity().findViewById(R.id.editText1);
-            String dateText = String.format("%02d/%02d/%d", mm + 1, dd, yy);
-            editText1.setText(dateText);
+        @Override
+        public void onAttach(Activity activity) {
+            super.onAttach(activity);
+            if (activity instanceof ActivityCallback)
+            {
+                activityCallback = (ActivityCallback) activity;
+            }
+        }
+
+        public void onDateSet(DatePicker view, int yy, int mm, int dd) {
+			String dateText = String.format("%02d/%02d/%d", mm + 1, dd, yy);
+            if (activityCallback == null)
+            {
+                EditText editText1 = (EditText) getActivity().findViewById(R.id.editTextDate);
+                editText1.setText(dateText);
+            }
+            else
+            {
+                activityCallback.sendText(dateText);
+            }
 		}
 	}
 
@@ -554,39 +616,35 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 	{
 		public void onClick(View v)
 		{
-			_editText1 = (EditText) findViewById(R.id.editText1);
-			_editText2 = (EditText) findViewById(R.id.editText2);
-			
-			String date = _editText1.getText().toString();
+			String date = _editTextDate.getText().toString();
 			if (date.length() == 0)
 				return;
 			
-			String weight = formatWeight(_editText2.getText().toString());
+			String weight = formatWeight(_editTextWeight.getText().toString());
 			if (weight.length() == 0)
 				return;
 			
 			setStartingWeight(weight);
 			String loss = calculateLoss(weight);
 			String pct = calculatePercentage(loss);
-			if (addTableRow(date, weight, loss, pct, true))
+            if (addTableRow(_tableLayoutResults, date, weight, loss, pct, true))
             {
                 // Update the file
-                if (!modified) {
-                    modified = true;
+                if (!_modified) {
+                    _modified = true;
                 }
             }
 
 			// Clear text areas
-			_editText1.setText("");
-			_editText2.setText("");
+			_editTextDate.setText("");
+			_editTextWeight.setText("");
 			
 			// Give focus back to the layout.
-			RelativeLayout mainLayout = (RelativeLayout)findViewById(R.id.mainLayout);
-			mainLayout.requestFocus();
+			_mainLayout.requestFocus();
 			
 			// Remove the keyboard.
 			InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-			imm.hideSoftInputFromWindow(mainLayout.getWindowToken(), 0);
+			imm.hideSoftInputFromWindow(_mainLayout.getWindowToken(), 0);
 		}
 	}
 

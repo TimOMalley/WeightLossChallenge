@@ -24,4 +24,6 @@
     <string name="name_required">Name required!</string>
     <string name="title_invalid">Invalid Entry</string>
     <string name="invalid_message">Entry not added to table.</string>
+    <string name="error_text">Error</string>
+    <string name="ok_text">Ok</string>
 </resources>

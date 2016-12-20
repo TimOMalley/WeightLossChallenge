@@ -1,7 +1,7 @@
 package com.twelvelouisiana.android.weightlosschallenge;
 
 /**
- * Created by tomal on 12/8/2016.
+ * Class to hold file information.
  */
 
 public class ChallengeItem

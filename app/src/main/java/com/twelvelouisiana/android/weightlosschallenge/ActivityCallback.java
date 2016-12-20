@@ -10,4 +10,5 @@ public interface ActivityCallback
 {
     void sendData(File[] results);
     void sendData(int operation, String[] results);
+    void sendText(String text);
 }
