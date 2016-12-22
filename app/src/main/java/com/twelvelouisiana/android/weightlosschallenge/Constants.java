@@ -1,5 +1,7 @@
 package com.twelvelouisiana.android.weightlosschallenge;
 
+import java.text.SimpleDateFormat;
+
 /**
  * The class contains static variables.
  */
@@ -14,5 +16,7 @@ public class Constants
 
     public static final String DATA_FILENAME_EXT = ".dat";
     public static final String FILENAME_KEY = "filename";
+
+    public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MM/dd/yyyy");
 
 }

@@ -30,14 +30,19 @@ import android.widget.TableRow.LayoutParams;
 import android.widget.TextView;
 
 import java.io.File;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Comparator;
+import java.util.Date;
 
 public class WeightLossChallengeActivity extends FragmentActivity implements ActivityCallback
 {
     private static final String TAG = WeightLossChallengeActivity.class.getName();
 
 	private String _startingWeight;
+    private String _startDate;
     private RelativeLayout _mainLayout;
 	private EditText _editTextDate;
 	private EditText _editTextWeight;
@@ -285,57 +290,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 		button.setOnClickListener(new EnterButtonOnClickListener());
 	}
 	
-	private String calculateLoss(String weight)
-	{
-		String lossString = "0";
-		if (_startingWeight == null || _startingWeight.equals(weight))
-		{
-			return lossString;
-		}
-		try
-		{
-			double start = Double.valueOf(_startingWeight);
-			double current = Double.valueOf(weight);
-			double loss = start - current;
-			lossString = String.format("%3.1f", loss);
-		}
-		catch(Exception e){
-            Log.d(TAG, "Error calculating loss", e);
-        }
-		return lossString;
-	}
-	
-	private String calculatePercentage(String loss)
-	{
-		String pctString = "0";
-		if (_startingWeight == null)
-		{
-			return pctString;
-		}
-		try
-		{
-			double start = Double.valueOf(_startingWeight);
-			double amount = Double.valueOf(loss);
-			double pct = amount/start;
-			pctString = String.format("%3.2f", pct*100);;
-		}
-		catch(Exception e){
-            Log.d(TAG, "Error calculating percentage", e);
-        }
-		return pctString;
-	}
-	
-	private boolean validate(String entry)
-	{
-		boolean validated = false;
-		if (entry != null && entry.length() > 0)
-		{
-			validated = true;
-		}
-		return validated;
-	}
-
-    private String[] getTableData(TableLayout tableLayout)
+	private String[] getTableData(TableLayout tableLayout)
     {
         ArrayList<String> rows = new ArrayList<String>();
         if (tableLayout != null) {
@@ -343,13 +298,13 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
             {
                 TableRow tableRow = (TableRow) tableLayout.getChildAt(i);
                 StringBuilder row = new StringBuilder();
-                row.append(getCellText(tableRow, 0));
+                row.append(Utilities.getCellText(tableRow, 0));
                 row.append(";");
-                row.append(getCellText(tableRow, 1));
+                row.append(Utilities.getCellText(tableRow, 1));
                 row.append(";");
-                row.append(getCellText(tableRow, 2));
+                row.append(Utilities.getCellText(tableRow, 2));
                 row.append(";");
-                row.append(getCellText(tableRow, 3));
+                row.append(Utilities.getCellText(tableRow, 3));
                 rows.add(row.toString());
             }
         }
@@ -357,24 +312,12 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
         return rows.toArray(new String[rows.size()]);
     }
 
-    private String getCellText(TableRow tableRow, int position)
+    private void loadTableData(String[] lines)
     {
-        String text = "";
-        if (tableRow == null)
-        {
-            return text;
-        }
-        View view = tableRow.getChildAt(position);
-        if (view != null && view instanceof TextView)
-        {
-            TextView textView = (TextView) view;
-            text = textView.getText().toString();
-        }
-
-        return text;
+        loadTableData(lines, false);
     }
 
-    private void loadTableData(String[] lines)
+    private void loadTableData(String[] lines, boolean reset)
     {
         if (lines == null || lines.length == 0)
         {
@@ -384,7 +327,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
         try
         {
             // Clear data rows
-            clearTableData(_tableLayoutResults);
+            Utilities.clearTableData(_tableLayoutResults);
 
             for (String line : lines)
             {
@@ -393,9 +336,15 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
                 {
                     String date = row[0];
                     String weight = row[1];
+                    setStartValues(date, weight);
                     String loss = row[2];
                     String pct = row[3];
-                    setStartingWeight(weight);
+                    if (reset)
+                    {
+                        // Calculate new loss and percentage values on a reset.
+                        loss = Utilities.calculateLoss(_startingWeight, weight);
+                        pct = Utilities.calculatePercentage(_startingWeight, loss);
+                    }
                     addTableRow(_tableLayoutResults, date, weight, loss, pct, false);
                 }
             }
@@ -409,7 +358,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
     private boolean addTableRow(TableLayout tableLayout, String date, String weight, String loss, String pct, boolean alert)
 	{
         boolean added = false;
-		if (validate(date) && validate(weight))
+		if (Utilities.validate(date) && Utilities.validate(weight))
 		{
 			TableRow tableRow = new TableRow(WeightLossChallengeActivity.this);
 			if (_alternateBackgroundColor)
@@ -469,34 +418,26 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 
         if (tableLayout != null)
         {
-            // Loop through the table to find he row
-            for (int i = 1; i < tableLayout.getChildCount(); i++) {
+            // Loop through the table to find the row
+            for (int i = 1; i < tableLayout.getChildCount(); i++)
+            {
                 View view = tableLayout.getChildAt(i);
                 if (view.getId() == id)
                     tableRow = (TableRow) view;
             }
-            if (tableRow != null) {
+            if (tableRow != null)
+            {
                 // Remove from table
                 tableLayout.removeView(tableRow);
                 removed = true;
 
-                // _alternateBackgroundColor
                 resetAlternateBackgroundColor(tableLayout);
             }
         }
         return removed;
 	}
 
-    private void clearTableData(TableLayout tableLayout)
-    {
-        if (tableLayout != null)
-        {
-            int rows = tableLayout.getChildCount();
-            tableLayout.removeViews(1, rows - 1);
-        }
-    }
-	
-	private void resetAlternateBackgroundColor(TableLayout tableLayout)
+    private void resetAlternateBackgroundColor(TableLayout tableLayout)
 	{
 		_alternateBackgroundColor = false;
 		for (int i = 1; i < tableLayout.getChildCount(); i++)
@@ -509,7 +450,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 			}
 			else
 			{
-				view.setBackgroundColor(Color.WHITE);
+				view.setBackgroundColor(Color.TRANSPARENT);
 				_alternateBackgroundColor = true;
 			}
 		}
@@ -522,15 +463,49 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 			// Clear initial setting
 			_startingWeight = null;
 			_alternateBackgroundColor = false;
+            _rowId = 0;
 
 			// Clear Table
-			clearTableData(_tableLayoutResults);
+			Utilities.clearTableData(_tableLayoutResults);
+
+            if(!_modified)
+            {
+                _modified = true;
+            }
 		}
 		catch (Exception e)
 		{
 			showExceptionAlert(e);
 		}
 	}
+
+    private void resetTable()
+    {
+        // Get current rows
+        String[] rows = getTableData(_tableLayoutResults);
+        // Sort by date
+        Arrays.sort(rows, new Comparator<String>() {
+
+            @Override
+            public int compare(String o1, String o2) {
+                try
+                {
+                    String[] arr1 = o1.split(";");
+                    String date1 = arr1[0];
+                    String[] arr2 = o2.split(";");
+                    String date2 = arr2[0];
+                    return Constants.DATE_FORMAT.parse(date1).compareTo(Constants.DATE_FORMAT.parse(date2));
+                } catch (ParseException e)
+                {
+                    e.printStackTrace();
+                }
+
+                return -1;
+            }
+        });
+        // Add new rows to table
+        loadTableData(rows, true);
+    }
 
 	private void showExceptionAlert(Exception e)
 	{
@@ -550,23 +525,49 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
         dialog.setNeutralButton(R.string.ok_text, null);
         dialog.create().show();
 	}
-	
-	private void setStartingWeight(String weight)
-	{
-		if (_startingWeight == null)
-		{
-			_startingWeight = weight;
-		}
-	}
 
-	private String formatWeight(String w)
-	{
-		if (w == null || w.length() == 0)
-			return "";
-		return String.format("%9.1f", Double.valueOf(w));
-	}
+    private void setStartValues(String date, String weight)
+    {
+        // Start Date
+        if (_startDate == null)
+        {
+            _startDate = date;
+        }
 
-	public static class DatePickerDialogFragment extends DialogFragment implements	DatePickerDialog.OnDateSetListener
+        // Start Weight
+        if (_startingWeight == null)
+        {
+            _startingWeight = weight;
+        }
+    }
+
+   private boolean checkStartDate(String date, String weight)
+    {
+        if (date == null || weight == null)
+        {
+            return false;
+        }
+
+        boolean weightChanged = false;
+        try
+        {
+            Date newDate = Constants.DATE_FORMAT.parse(date);
+            Date startDate = Constants.DATE_FORMAT.parse(_startDate);
+            if (newDate.before(startDate))
+            {
+                _startDate = date;
+                _startingWeight = weight;
+                weightChanged = true;
+            }
+        }
+        catch (Exception e)
+        {
+            Log.d(TAG, "Error comparing start date.", e);
+        }
+        return weightChanged;
+    }
+
+    public static class DatePickerDialogFragment extends DialogFragment implements	DatePickerDialog.OnDateSetListener
 	{
         private ActivityCallback activityCallback;
 
@@ -620,19 +621,25 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 			if (date.length() == 0)
 				return;
 			
-			String weight = formatWeight(_editTextWeight.getText().toString());
+			String weight = Utilities.formatWeight(_editTextWeight.getText().toString());
 			if (weight.length() == 0)
 				return;
-			
-			setStartingWeight(weight);
-			String loss = calculateLoss(weight);
-			String pct = calculatePercentage(loss);
+
+            setStartValues(date, weight);
+			boolean startValuesChanged = checkStartDate(date, weight);
+			String loss = Utilities.calculateLoss(_startingWeight, weight);
+			String pct = Utilities.calculatePercentage(_startingWeight, loss);
             if (addTableRow(_tableLayoutResults, date, weight, loss, pct, true))
             {
                 // Update the file
                 if (!_modified) {
                     _modified = true;
                 }
+            }
+
+            if (startValuesChanged)
+            {
+                resetTable();
             }
 
 			// Clear text areas

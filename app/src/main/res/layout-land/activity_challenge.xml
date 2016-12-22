@@ -6,7 +6,7 @@
     android:paddingRight="16dp"
     android:focusable="true"
 	android:focusableInTouchMode="true"
-	android:background="@drawable/main_border" >
+	android:background="#E0E0E0" >
 
 	<RelativeLayout
 		android:layout_width="wrap_content"
@@ -67,7 +67,8 @@
         android:layout_below="@id/weightLayout"
         android:text="@string/enter"
         android:textStyle="bold"
-  		android:padding="0dp"
+        android:background="#C0C0C0"
+        android:layout_marginBottom="5dp"
         android:layout_alignLeft="@+id/dateLayout"
         android:layout_alignRight="@+id/dateLayout" />
 
@@ -76,7 +77,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/buttonEnter"
-		android:background="@drawable/table_border" >
+        android:layout_marginBottom="3dp"
+        android:background="@drawable/table_border" >
 
         <TableLayout
             android:paddingTop="5dp"
