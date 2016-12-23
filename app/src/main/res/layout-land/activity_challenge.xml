@@ -5,8 +5,7 @@
     android:paddingLeft="16dp"
     android:paddingRight="16dp"
     android:focusable="true"
-	android:focusableInTouchMode="true"
-	android:background="#E0E0E0" >
+	android:focusableInTouchMode="true">
 
 	<RelativeLayout
 		android:layout_width="wrap_content"
@@ -67,7 +66,6 @@
         android:layout_below="@id/weightLayout"
         android:text="@string/enter"
         android:textStyle="bold"
-        android:background="#C0C0C0"
         android:layout_marginBottom="5dp"
         android:layout_alignLeft="@+id/dateLayout"
         android:layout_alignRight="@+id/dateLayout" />
