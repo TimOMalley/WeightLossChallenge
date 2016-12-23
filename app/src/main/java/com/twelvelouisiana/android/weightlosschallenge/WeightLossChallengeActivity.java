@@ -84,7 +84,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 
         addListenerOnDateText();
 		addListenerOnButtonEnter();
-
+        setCurrentDate();
 	}
 
     @Override
@@ -289,6 +289,19 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 		Button button = (Button) findViewById(R.id.buttonEnter);
 		button.setOnClickListener(new EnterButtonOnClickListener());
 	}
+
+    private void setCurrentDate()
+    {
+        if (_editTextDate == null)
+        {
+            return;
+        }
+
+        if (_editTextDate.getText().length() == 0)
+        {
+            _editTextDate.setText(Utilities.getCurrentDate());
+        }
+    }
 	
 	private String[] getTableData(TableLayout tableLayout)
     {

@@ -6,6 +6,9 @@ import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 
+import java.util.Calendar;
+import java.util.Date;
+
 /**
  * Class of utility or helper methods.
  */
@@ -97,7 +100,15 @@ public class Utilities
         }
     }
 
+    public static String getCurrentDate()
+    {
+        try
+        {
+            return Constants.DATE_FORMAT.format(Calendar.getInstance().getTime());
+        } catch (Exception e){}
 
+        return new String();
+    }
 
 
 }
