@@ -10,7 +10,6 @@
         android:layout_alignParentLeft="true"
         android:padding="10dip"
         android:textSize="16dip"
-        android:textColor="@android:color/black"
         android:textStyle="bold"/>
 
     <TextView
@@ -20,7 +19,6 @@
         android:layout_alignParentRight="true"
         android:padding="10dip"
         android:textSize="16dip"
-        android:textColor="@android:color/black"
         android:textStyle="bold"/>
 
 </RelativeLayout>

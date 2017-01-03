@@ -7,7 +7,6 @@ import android.widget.TableRow;
 import android.widget.TextView;
 
 import java.util.Calendar;
-import java.util.Date;
 
 /**
  * Class of utility or helper methods.

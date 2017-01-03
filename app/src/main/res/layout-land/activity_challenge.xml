@@ -66,7 +66,8 @@
         android:layout_below="@id/weightLayout"
         android:text="@string/enter"
         android:textStyle="bold"
-        android:layout_marginBottom="5dp"
+		android:background="#C0C0C0"
+		android:layout_marginBottom="5dp"
         android:layout_alignLeft="@+id/dateLayout"
         android:layout_alignRight="@+id/dateLayout" />
 

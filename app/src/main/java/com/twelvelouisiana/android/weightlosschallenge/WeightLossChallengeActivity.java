@@ -30,11 +30,9 @@ import android.widget.TableRow.LayoutParams;
 import android.widget.TextView;
 
 import java.io.File;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Comparator;
 import java.util.Date;
 
 public class WeightLossChallengeActivity extends FragmentActivity implements ActivityCallback
@@ -70,6 +68,11 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
         }
         else
         {
+            if (actionBar != null)
+            {
+                actionBar.setDisplayHomeAsUpEnabled(true);
+                actionBar.setDisplayShowHomeEnabled(false);
+            }
             setTitle(filename);
         }
         if (savedInstanceState == null)
@@ -497,25 +500,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
         // Get current rows
         String[] rows = getTableData(_tableLayoutResults);
         // Sort by date
-        Arrays.sort(rows, new Comparator<String>() {
-
-            @Override
-            public int compare(String o1, String o2) {
-                try
-                {
-                    String[] arr1 = o1.split(";");
-                    String date1 = arr1[0];
-                    String[] arr2 = o2.split(";");
-                    String date2 = arr2[0];
-                    return Constants.DATE_FORMAT.parse(date1).compareTo(Constants.DATE_FORMAT.parse(date2));
-                } catch (ParseException e)
-                {
-                    e.printStackTrace();
-                }
-
-                return -1;
-            }
-        });
+        Arrays.sort(rows, new TableRowComparator());
         // Add new rows to table
         loadTableData(rows, true);
     }
@@ -658,6 +643,7 @@ public class WeightLossChallengeActivity extends FragmentActivity implements Act
 			// Clear text areas
 			_editTextDate.setText("");
 			_editTextWeight.setText("");
+            setCurrentDate();
 			
 			// Give focus back to the layout.
 			_mainLayout.requestFocus();

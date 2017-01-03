@@ -52,7 +52,7 @@
         android:layout_below="@id/editTextWeight"
         android:text="@string/enter"
         android:textStyle="bold"
-        android:layout_marginBottom="5dp"
+		android:layout_marginBottom="5dp"
         android:layout_alignLeft="@+id/editTextWeight"
         android:layout_alignRight="@+id/editTextWeight" />
 

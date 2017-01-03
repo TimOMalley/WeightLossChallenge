@@ -13,6 +13,7 @@ import android.widget.TextView;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 
@@ -28,7 +29,7 @@ public class MainActivity extends Activity implements ActivityCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        listAdapter = new ChallengeListAdapter(this.getApplicationContext(), challengeList);
+        listAdapter = new ChallengeListAdapter(this.getBaseContext(), challengeList);
 
         ListView listView = (ListView) findViewById(R.id.challengeList);
         listView.setAdapter(listAdapter);
@@ -73,6 +74,8 @@ public class MainActivity extends Activity implements ActivityCallback
     @Override
     public void sendData(File[] results) {
         if (results != null) {
+            // Sort descending
+            Arrays.sort(results, new FileComparator(false));
             challengeList.clear();
             for (File file : results) {
                 Date date = new Date(file.lastModified());
