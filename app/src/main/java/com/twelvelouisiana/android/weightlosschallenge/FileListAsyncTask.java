@@ -2,7 +2,6 @@ package com.twelvelouisiana.android.weightlosschallenge;
 
 import android.app.Activity;
 import android.os.AsyncTask;
-import android.widget.TextView;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -12,38 +11,37 @@ import java.lang.ref.WeakReference;
  * Background task to list the saved data files in the data directory.
  */
 
-public class FileListAsyncTask extends AsyncTask<Void, Void, String[]> implements FilenameFilter
+public class FileListAsyncTask extends AsyncTask<Void, Void, File[]> implements FilenameFilter
 {
-    ActivityCallback fileListActivityCallback;
+    ActivityCallback activityCallback;
     WeakReference<Activity> weakReference;
 
     public FileListAsyncTask(Activity activity)
     {
-        fileListActivityCallback = (ActivityCallback) activity;
+        activityCallback = (ActivityCallback) activity;
         weakReference = new WeakReference<Activity>(activity);
     }
 
     @Override
-    protected String[] doInBackground(Void... voids) {
+    protected File[] doInBackground(Void... voids) {
         Activity activity = weakReference.get();
         if (activity != null)
         {
-            return activity.getFilesDir().list(this);
+            return activity.getFilesDir().listFiles(this);
         }
-        return new String[0];
+        return new File[0];
     }
 
     @Override
-    protected void onPostExecute(String[] strings) {
-        fileListActivityCallback.sendData(strings);
-        super.onPostExecute(strings);
+    protected void onPostExecute(File[] files) {
+        activityCallback.sendData(files);
+        super.onPostExecute(files);
     }
 
     @Override
     public boolean accept(File file, String name) {
         String lowercaseName = name.toLowerCase();
-        if (lowercaseName.endsWith(WeightLossChallengeActivity.DATA_FILENAME_EXT)
-                && lowercaseName.startsWith(WeightLossChallengeActivity.DATA_FILENAME_PREFIX))
+        if (lowercaseName.endsWith(Constants.DATA_FILENAME_EXT))
         {
             return true;
         }
