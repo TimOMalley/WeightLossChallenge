@@ -1,12 +1,13 @@
 apply plugin: 'com.android.application'
+apply from: "../artifacts.gradle"
 
 android {
-    compileSdkVersion 17
-    buildToolsVersion "24.0.3"
+    compileSdkVersion 22
+    buildToolsVersion '25.0.2'
     defaultConfig {
         applicationId "com.twelvelouisiana.android.weightlosschallenge"
-        minSdkVersion 17
-        targetSdkVersion 17
+        minSdkVersion 22
+        targetSdkVersion 22
     }
     buildTypes {
         release {
@@ -19,5 +20,6 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:support-v4:18.0.0'
+    compile 'com.android.support:support-v4:22.0.0'
+    compile 'com.android.support:appcompat-v7:22.0.0'
 }
